@@ -15,6 +15,10 @@ def main():
         "files_to_generate": [],
         "written_files": [],
         "explanation": "",
+        "review_feedback": "",
+        "approved": False,
+        "revision_count": 0,
+        "max_revisions": 2,
     }
 
     result = graph.invoke(initial_state)
@@ -32,6 +36,9 @@ def main():
         print(f"- {path}")
 
     print(f"\nExplanation:\n{result['explanation']}")
+    print(f"\nApproved: {result['approved']}")
+    print(f"Revision Count: {result['revision_count']}")
+    print(f"Review Feedback:\n{result['review_feedback']}")
 
 
 if __name__ == "__main__":

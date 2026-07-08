@@ -22,3 +22,7 @@ class CodePilotState(TypedDict):
     files_to_generate: list[FileSpec]
     written_files: list[str]
     explanation: str
+    review_feedback: str
+    approved: bool
+    revision_count: int
+    max_revisions: int

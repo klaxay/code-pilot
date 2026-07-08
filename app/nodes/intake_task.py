@@ -23,4 +23,8 @@ def intake_task(state: CodePilotState) -> dict:
         "files_to_generate": state.get("files_to_generate", []),
         "written_files": state.get("written_files", []),
         "explanation": state.get("explanation", ""),
+        "review_feedback": state.get("review_feedback", ""),
+        "approved": state.get("approved", False),
+        "revision_count": state.get("revision_count", 0),
+        "max_revisions": state.get("max_revisions", 2),
     }
