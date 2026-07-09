@@ -4,17 +4,26 @@ from app.graph.workflow import build_graph
 def main():
     task = input("Enter coding task: ").strip()
     output_dir = input("Enter output directory: ").strip()
+    repo_path = input("Enter repo path (leave blank to build from scratch): ").strip()
 
     graph = build_graph()
 
     initial_state = {
         "task": task,
         "output_dir": output_dir,
+
+        "mode": "",
+        "repo_path": repo_path,
+        "repo_tree": [],
+        "relevant_files": [],
+        "repo_context": [],
+
         "plan": "",
         "file_specs": [],
         "files_to_generate": [],
         "written_files": [],
         "explanation": "",
+
         "review_feedback": "",
         "approved": False,
         "revision_count": 0,
@@ -25,6 +34,8 @@ def main():
 
     print("\n=== CODE PILOT RESULT ===")
     print(f"\nTask:\n{result['task']}")
+    print(f"\nMode: {result['mode']}")
+    print(f"Repo Path: {result['repo_path'] or '(none)'}")
     print(f"\nPlan:\n{result['plan']}")
 
     print("\nGenerated Files:")
@@ -35,10 +46,10 @@ def main():
     for path in result["written_files"]:
         print(f"- {path}")
 
-    print(f"\nExplanation:\n{result['explanation']}")
     print(f"\nApproved: {result['approved']}")
     print(f"Revision Count: {result['revision_count']}")
-    print(f"Review Feedback:\n{result['review_feedback']}")
+    print(f"\nReview Feedback:\n{result['review_feedback']}")
+    print(f"\nExplanation:\n{result['explanation']}")
 
 
 if __name__ == "__main__":

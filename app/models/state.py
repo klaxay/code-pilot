@@ -26,3 +26,8 @@ class CodePilotState(TypedDict):
     approved: bool
     revision_count: int
     max_revisions: int
+    mode: str
+    repo_path: str
+    repo_tree: list[str]
+    relevant_files: list[str]
+    repo_context: list[]
