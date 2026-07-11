@@ -9,6 +9,7 @@ dependencies = [
     "langchain",
     "langchain-openai",
     "python-dotenv",
+    "ipython>=9.15.0",
 ]
 
 [build-system]

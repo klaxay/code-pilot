@@ -1,4 +1,5 @@
 from app.graph.workflow import build_graph
+from IPython.display import Image, display
 
 
 def main():
@@ -7,7 +8,8 @@ def main():
     repo_path = input("Enter repo path (leave blank to build from scratch): ").strip()
 
     graph = build_graph()
-
+    graph_image = graph.get_graph().draw_mermaid_png()
+    display(Image(graph_image))
     initial_state = {
         "task": task,
         "output_dir": output_dir,

@@ -8,6 +8,8 @@ from app.nodes.write_files import write_files_node
 from app.nodes.finalize import finalize
 from app.nodes.review_agent import review_agent
 from app.nodes.detect_mode import detect_mode
+from app.nodes.discover_repo import discover_repo
+from app.nodes.gather_context import gather_context
 
 def route_after_review(state: CodePilotState):
     if state["approved"]:
@@ -28,6 +30,8 @@ def build_graph():
 
     graph.add_node("intake_task", intake_task)
     graph.add_node("detect_mode", detect_mode)
+    graph.add_node("discover_repo", discover_repo)
+    graph.add_node("gather_context", gather_context)
     graph.add_node("planner_agent", planner_agent)
     graph.add_node("implementer_agent", implementer_agent)
     graph.add_node("review_agent", review_agent)
@@ -45,6 +49,8 @@ def build_graph():
         }
 
     )
+    graph.add_edge("discover_repo", "gather_context")
+    graph.add_edge("gather_context", "planner_agent")
     graph.add_edge("planner_agent", "implementer_agent")
     graph.add_edge("implementer_agent", "review_agent")
     graph.add_conditional_edges(

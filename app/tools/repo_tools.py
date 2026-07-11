@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from app.models.state import FileSpec
 
 IGNORED_DIRS = {
     ".git",
@@ -58,3 +58,42 @@ def list_repo_files(repo_path: str) -> list[str]:
 
     repo_files.sort()
     return repo_files
+
+def read_repo_files(
+    repo_path: str,
+    file_paths: list[str],
+) -> list[FileSpec]:
+    """
+    Reads the selected repository files and returns
+    their contents.
+    """
+
+    root = Path(repo_path).resolve()
+
+    repo_context: list[FileSpec] = []
+
+    for relative_path in file_paths:
+        full_path = root / relative_path
+
+        if not full_path.exists():
+            continue
+
+        if not full_path.is_file():
+            continue
+
+        try:
+            content = full_path.read_text(
+                encoding="utf-8",
+                errors="ignore",
+            )
+        except Exception:
+            continue
+
+        repo_context.append(
+            {
+                "path": relative_path,
+                "content": content,
+            }
+        )
+
+    return repo_context

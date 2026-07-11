@@ -30,4 +30,4 @@ class CodePilotState(TypedDict):
     repo_path: str
     repo_tree: list[str]
     relevant_files: list[str]
-    repo_context: list[]
+    repo_context: list

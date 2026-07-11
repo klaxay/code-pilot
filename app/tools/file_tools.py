@@ -1,56 +1,100 @@
 from pathlib import Path
+import shutil
+
+from app.models.state import FileSpec
 
 
-def _resolve_safe_path(base_dir: str, relative_path: str) -> Path:
+IGNORED_PATTERNS = shutil.ignore_patterns(
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "node_modules",
+    "dist",
+    "build",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".idea",
+    ".vscode",
+)
+
+
+def prepare_output_directory(
+    output_dir: str,
+    repo_path: str | None = None,
+    overwrite: bool = False,
+) -> None:
     """
-    Resolve a generated relative file path inside base_dir and ensure
-    it cannot escape the base directory.
+    Prepare the output directory.
+
+    Greenfield mode:
+        - Create an empty output directory.
+
+    Repo mode:
+        - Copy the repository into the output directory.
     """
-    base_path = Path(base_dir).resolve()
-    target_path = (base_path / relative_path).resolve()
 
-    if not str(target_path).startswith(str(base_path)):
-        raise ValueError(f"Unsafe file path detected: {relative_path}")
+    output = Path(output_dir)
 
-    return target_path
+    if output.exists():
+        if not overwrite:
+            raise ValueError(
+                f"Output directory '{output_dir}' already exists."
+            )
+
+        shutil.rmtree(output)
+
+    if repo_path:
+        repo = Path(repo_path)
+
+        if not repo.exists():
+            raise ValueError(
+                f"Repository path '{repo_path}' does not exist."
+            )
+
+        if not repo.is_dir():
+            raise ValueError(
+                f"Repository path '{repo_path}' is not a directory."
+            )
+
+        shutil.copytree(
+            repo,
+            output,
+            ignore=IGNORED_PATTERNS,
+        )
+
+    else:
+        output.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
 
-def write_files(base_dir: str, files: list[dict]) -> list[str]:
+def write_files(
+    output_dir: str,
+    files_to_generate: list[FileSpec],
+) -> list[str]:
     """
-    Write generated files into base_dir safely.
-
-    Args:
-        base_dir: The root directory where files should be written.
-        files: A list of dicts, each containing:
-            - path: relative file path
-            - content: file contents as a string
-
-    Returns:
-        A list of written file paths as strings.
+    Write generated files into the prepared output directory.
     """
-    base_path = Path(base_dir)
-    base_path.mkdir(parents=True, exist_ok=True)
+
+    output = Path(output_dir)
 
     written_files: list[str] = []
 
-    for file_spec in files:
-        if not isinstance(file_spec, dict):
-            raise ValueError("Each file spec must be a dictionary.")
+    for file in files_to_generate:
+        file_path = output / file["path"]
 
-        relative_path = file_spec.get("path")
-        content = file_spec.get("content")
+        file_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
-        if not isinstance(relative_path, str) or not relative_path.strip():
-            raise ValueError("Each file spec must contain a valid 'path' string.")
+        file_path.write_text(
+            file["content"],
+            encoding="utf-8",
+        )
 
-        if not isinstance(content, str):
-            raise ValueError("Each file spec must contain a valid 'content' string.")
-
-        safe_path = _resolve_safe_path(base_dir, relative_path)
-
-        safe_path.parent.mkdir(parents=True, exist_ok=True)
-        safe_path.write_text(content, encoding="utf-8")
-
-        written_files.append(str(safe_path))
+        written_files.append(file["path"])
 
     return written_files
