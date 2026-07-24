@@ -10,6 +10,8 @@ dependencies = [
     "langchain-openai",
     "python-dotenv",
     "ipython>=9.15.0",
+    "langchain-text-splitters>=1.1.2",
+    "chromadb>=1.5.9",
 ]
 
 [build-system]

@@ -1,5 +1,7 @@
 from pathlib import Path
+
 from app.models.state import FileSpec
+
 
 IGNORED_DIRS = {
     ".git",
@@ -23,50 +25,112 @@ IGNORED_FILE_NAMES = {
     ".DS_Store",
 }
 
+# Files that are generally not useful for code retrieval.
+NON_INDEXABLE_SUFFIXES = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".ico",
+    ".pdf",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".exe",
+    ".dll",
+    ".so",
+    ".woff",
+    ".woff2",
+    ".ttf",
+}
 
-def list_repo_files(repo_path: str) -> list[str]:
-    """
-    Recursively list relevant files in a repository, returning paths
-    relative to repo_path.
-    """
+MAX_INDEXABLE_FILE_SIZE = 1_000_000
+
+
+def _get_repo_files(repo_path: str) -> tuple[Path, list[Path]]:
     root = Path(repo_path).resolve()
 
     if not root.exists():
-        raise ValueError(f"Repository path does not exist: {repo_path}")
+        raise ValueError(
+            f"Repository path does not exist: {repo_path}"
+        )
 
     if not root.is_dir():
-        raise ValueError(f"Repository path is not a directory: {repo_path}")
+        raise ValueError(
+            f"Repository path is not a directory: {repo_path}"
+        )
 
-    repo_files: list[str] = []
+    files: list[Path] = []
 
     for path in root.rglob("*"):
-        if path.is_dir():
+        if not path.is_file():
             continue
 
-        # Skip ignored directories anywhere in the path
-        if any(part in IGNORED_DIRS for part in path.parts):
+        relative_path = path.relative_to(root)
+
+        if any(
+            part in IGNORED_DIRS
+            for part in relative_path.parts
+        ):
             continue
 
         if path.name in IGNORED_FILE_NAMES:
             continue
 
-        if path.suffix in IGNORED_FILE_SUFFIXES:
+        if path.suffix.lower() in IGNORED_FILE_SUFFIXES:
             continue
 
-        relative_path = path.relative_to(root).as_posix()
-        repo_files.append(relative_path)
+        files.append(path)
 
-    repo_files.sort()
-    return repo_files
+    return root, files
+
+
+def list_repo_files(repo_path: str) -> list[str]:
+    """
+    Return repository files for repository discovery.
+    """
+
+    root, files = _get_repo_files(repo_path)
+
+    repo_files = [
+        path.relative_to(root).as_posix()
+        for path in files
+    ]
+
+    return sorted(repo_files)
+
+
+def scan_indexable_files(repo_path: str) -> list[str]:
+    """
+    Return repository files suitable for indexing.
+    """
+
+    root, files = _get_repo_files(repo_path)
+
+    indexable_files: list[str] = []
+
+    for path in files:
+
+        if path.suffix.lower() in NON_INDEXABLE_SUFFIXES:
+            continue
+
+        try:
+            if path.stat().st_size > MAX_INDEXABLE_FILE_SIZE:
+                continue
+        except OSError:
+            continue
+
+        indexable_files.append(
+            path.relative_to(root).as_posix()
+        )
+
+    return sorted(indexable_files)
+
 
 def read_repo_files(
     repo_path: str,
     file_paths: list[str],
 ) -> list[FileSpec]:
-    """
-    Reads the selected repository files and returns
-    their contents.
-    """
 
     root = Path(repo_path).resolve()
 
@@ -74,9 +138,6 @@ def read_repo_files(
 
     for relative_path in file_paths:
         full_path = root / relative_path
-
-        if not full_path.exists():
-            continue
 
         if not full_path.is_file():
             continue
@@ -86,7 +147,7 @@ def read_repo_files(
                 encoding="utf-8",
                 errors="ignore",
             )
-        except Exception:
+        except OSError:
             continue
 
         repo_context.append(
